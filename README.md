@@ -20,6 +20,10 @@ A drop-in photo gallery that keeps loading as you scroll. Add one script tag and
 - **Zero dependencies**, about 12 KB gzipped, MIT licensed.
 
 **Demo:** open `docs/index.html` in a browser. It works offline because its photos are painted on a canvas.
+| Desktop | Mobile |
+|---|---|
+| ![Rows layout on desktop](docs/screenshots/desktop-2-rows.png) | ![Rows layout on mobile](docs/screenshots/mobile-2-rows.png) |
+| ![Photo viewer on desktop](docs/screenshots/desktop-5-viewer.png) | ![Photo viewer on mobile](docs/screenshots/mobile-4-viewer.png) |
 
 ## Install
 
