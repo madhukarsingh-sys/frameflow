@@ -1,6 +1,6 @@
 {
   "name": "frameflow",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Drop-in infinite-scroll photo gallery with virtualized rendering and a touch-friendly viewer. Zero dependencies.",
   "type": "module",
   "main": "./dist/frameflow.esm.js",
@@ -13,17 +13,35 @@
       "import": "./dist/frameflow.esm.js",
       "default": "./dist/frameflow.min.js"
     },
-    "./css": "./dist/frameflow.css"
+    "./css": "./dist/frameflow.css",
+    "./items": "./src/items.js",
+    "./source": "./src/source.js",
+    "./layout": "./src/layout.js"
   },
-  "files": ["dist", "src"],
-  "sideEffects": ["./dist/frameflow.js", "./dist/frameflow.min.js"],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": [
+    "./dist/frameflow.js",
+    "./dist/frameflow.min.js"
+  ],
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test test/*.test.js",
     "test:e2e": "node test/e2e.mjs",
     "serve": "python3 -m http.server 8080"
   },
-  "keywords": ["gallery", "infinite-scroll", "lightbox", "masonry", "justified", "photos", "virtual-scroll", "vanilla-js"],
+  "keywords": [
+    "gallery",
+    "infinite-scroll",
+    "lightbox",
+    "masonry",
+    "justified",
+    "photos",
+    "virtual-scroll",
+    "vanilla-js"
+  ],
   "license": "MIT",
   "devDependencies": {
     "esbuild": "^0.25.12"

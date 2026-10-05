@@ -4,7 +4,7 @@ import { createSource } from './source.js';
 import { injectStyles } from './styles.js';
 import { Lightbox } from './lightbox.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 const DEFAULTS = {
   layout: 'justified',   // 'justified' | 'masonry' | 'grid'

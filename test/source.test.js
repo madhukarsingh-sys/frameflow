@@ -8,9 +8,9 @@ test('function source pages until an empty result', async () => {
   const pages = [['a.jpg', 'b.jpg'], ['c.jpg'], []];
   const seen = [];
   const s = createSource({ source: async ({ page }) => { seen.push(page); return pages[page - 1]; } });
-  assert.deepEqual(await s.next(), { items: ['a.jpg', 'b.jpg'], done: false });
-  assert.deepEqual(await s.next(), { items: ['c.jpg'], done: false });
-  assert.deepEqual(await s.next(), { items: [], done: true });
+  assert.deepEqual(await s.next(), { items: ['a.jpg', 'b.jpg'], done: false, total: null });
+  assert.deepEqual(await s.next(), { items: ['c.jpg'], done: false, total: null });
+  assert.deepEqual(await s.next(), { items: [], done: true, total: null });
   assert.deepEqual(seen, [1, 2, 3]);
 });
 
@@ -71,4 +71,43 @@ test('json source refuses a next link that switches to another protocol', async 
   const r = await s.next();
   assert.equal(r.done, true, 'an unsafe next link ends paging instead of being followed');
   assert.equal(n, 1);
+});
+
+test('query values reach JSON URLs (empty ones skipped) and functions', async () => {
+  const urls = [];
+  globalThis.fetch = async url => { urls.push(url); return json({ items: ['a.jpg'], total: 41, next: null }); };
+  const s = createSource({ src: 'https://site.com/api?page={page}', query: { sort: 'price', q: '', inStock: true, off: false, page: 9 } });
+  const r = await s.next();
+  assert.equal(r.total, 41);
+  assert.equal(urls[0], 'https://site.com/api?page=1&sort=price&inStock=true');
+
+  let ctx;
+  const f = createSource({ source: async c => { ctx = c; return []; }, query: { sort: 'new', page: 99 } });
+  await f.next();
+  assert.equal(ctx.sort, 'new');
+  assert.equal(ctx.page, 1, 'paging fields cannot be overridden by the query');
+});
+
+test('sources resume from saved state', async () => {
+  const pages = [];
+  const f = createSource({ source: async ({ page, cursor }) => { pages.push([page, cursor]); return { items: ['x'], cursor: 'c' + page }; } }, { page: 4, cursor: 'c3' });
+  await f.next();
+  assert.deepEqual(pages, [[4, 'c3']]);
+  assert.deepEqual(f.state(), { page: 5, cursor: 'c4' });
+
+  const urls = [];
+  globalThis.fetch = async url => { urls.push(url); return json({ items: ['x'], next: '/api/after-x' }); };
+  const j = createSource({ src: 'https://site.com/api?page={page}' }, { page: 3 });
+  await j.next();
+  assert.equal(urls[0], 'https://site.com/api?page=3');
+  const st = j.state();
+  assert.equal(st.nextUrl, 'https://site.com/api/after-x');
+  const j2 = createSource({ src: 'https://site.com/api?page={page}' }, st);
+  await j2.next();
+  assert.equal(urls[1], 'https://site.com/api/after-x');
+});
+
+test('total is ignored when it is not a non-negative number', async () => {
+  globalThis.fetch = async () => json({ items: ['a'], total: 'lots', next: null });
+  assert.equal((await createSource({ src: 'https://s.com/a' }).next()).total, null);
 });

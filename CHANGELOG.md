@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 — 2026-10-04
+
+- Sources accept a `query` object (sent as URL parameters, or passed to the source function), report an optional `total` from the response, and can resume from a saved `state()`. Used by the Aisle product catalog.
+- Core modules are exported for reuse: `frameflow/items`, `frameflow/source`, `frameflow/layout`.
+
 ## 1.0.0 — 2026-10-04
 
 First release.
