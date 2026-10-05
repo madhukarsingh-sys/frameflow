@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frameflow: JSON example</title>
+<style>body{margin:0;padding:24px;font:16px/1.5 system-ui,sans-serif;background:#f3f4f6}</style>
+</head>
+<body>
+<h1>Album from JSON files</h1>
+<p>Each file returns 24 photos and a <code>next</code> link. Serve this folder over http (for example <code>npm run serve</code> from the repo root) because browsers block fetch() on file:// pages.</p>
+
+<div data-frameflow data-src="album-1.json" data-height="75vh" data-layout="justified"></div>
+
+<script src="../../dist/frameflow.min.js"></script>
+</body>
+</html>

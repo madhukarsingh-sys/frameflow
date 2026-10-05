@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frameflow: Firebase Storage example</title>
+<style>body{margin:0;padding:24px;font:16px/1.5 system-ui,sans-serif}</style>
+</head>
+<body>
+<h1>Album from a Firebase Storage folder</h1>
+<div id="album"></div>
+
+<script src="../dist/frameflow.min.js" data-manual></script>
+<script type="module">
+  // Fill in your own project config. Storage security rules must allow reads.
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getStorage, ref, list, getDownloadURL, getMetadata }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+
+  const app = initializeApp({ /* apiKey, authDomain, projectId, storageBucket, ... */ });
+  const folder = ref(getStorage(app), 'album');
+
+  new Frameflow('#album', {
+    height: '75vh',
+    // Called once per page. `cursor` is the nextPageToken from the previous call.
+    source: async ({ cursor }) => {
+      const page = await list(folder, { maxResults: 30, pageToken: cursor || undefined });
+      const items = await Promise.all(page.items.map(async file => {
+        const [src, meta] = await Promise.all([getDownloadURL(file), getMetadata(file)]);
+        // Faster: save width/height as custom metadata when uploading, so
+        // Frameflow doesn't have to download each image to measure it.
+        const m = meta.customMetadata || {};
+        return { src, w: +m.width || undefined, h: +m.height || undefined, alt: m.alt || file.name };
+      }));
+      return { items, next: page.nextPageToken || null };
+    },
+  });
+</script>
+</body>
+</html>

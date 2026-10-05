@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frameflow: plain HTML example</title>
+<style>body{margin:0;padding:24px;font:16px/1.5 system-ui,sans-serif}</style>
+</head>
+<body>
+<h1>Plain HTML album</h1>
+<p>No JSON, no API. Without JavaScript these are ordinary linked images; with it they become a gallery.</p>
+
+<div data-frameflow data-layout="masonry">
+  <a href="https://picsum.photos/id/1015/2400/1600" data-caption="River valley">
+    <img src="https://picsum.photos/id/1015/600/400" width="600" height="400" alt="River valley">
+  </a>
+  <a href="https://picsum.photos/id/1016/1600/2400">
+    <img src="https://picsum.photos/id/1016/400/600" width="400" height="600" alt="Canyon walls">
+  </a>
+  <a href="https://picsum.photos/id/1018/2400/1350">
+    <img src="https://picsum.photos/id/1018/640/360" width="640" height="360" alt="Mountain range">
+  </a>
+  <a href="https://picsum.photos/id/1019/2000/2000">
+    <img src="https://picsum.photos/id/1019/500/500" width="500" height="500" alt="Shoreline">
+  </a>
+  <a href="https://picsum.photos/id/1021/2400/1600">
+    <img src="https://picsum.photos/id/1021/600/400" width="600" height="400" alt="Foggy forest">
+  </a>
+</div>
+
+<script src="../dist/frameflow.min.js"></script>
+</body>
+</html>
