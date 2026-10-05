@@ -26,10 +26,8 @@ A drop-in photo gallery that keeps loading as you scroll. Add one script tag and
 The quickest way is a script tag:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/YOUR-USER/frameflow@v1.0.0/dist/frameflow.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/madhukarsingh-sys/frameflow@v1.0.0/dist/frameflow.min.js"></script>
 ```
-
-(Replace `YOUR-USER` once the repo is on GitHub. jsDelivr serves any tagged GitHub release.) You can also copy `dist/frameflow.min.js` into your site, or install from npm once published:
 
 ```bash
 npm install frameflow
