@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frameflow: a drop-in photo gallery that keeps scrolling</title>
+<meta name="description" content="Infinite-scroll photo gallery with virtualized rendering and a swipeable viewer. One script tag, no dependencies.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --table:#e6eaee; --sheet:#fbfcfd; --ink:#17202a; --graphite:#566472; --rule:#c9d1d8; --marker:#f2be22;
+  --font:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--table:#10161d;--sheet:#18212b;--ink:#e3e8ed;--graphite:#93a1ae;--rule:#2b3742}
+}
+:root[data-theme="dark"]{--table:#10161d;--sheet:#18212b;--ink:#e3e8ed;--graphite:#93a1ae;--rule:#2b3742}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--table);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+header{padding:clamp(36px,8vw,88px) 0 28px}
+h1{font-size:clamp(56px,13vw,148px);line-height:.86;letter-spacing:-.045em;font-weight:800;margin:0 0 22px;
+  font-variation-settings:"opsz" 96}
+h1 span{display:inline-block;transform:translateY(.06em)}
+.lede{max-width:34em;font-size:clamp(18px,2.2vw,21px);color:var(--graphite);margin:0 0 26px}
+pre,code{font-family:var(--mono);font-size:14px}
+.snippet{position:relative;display:flex;align-items:center;gap:12px;max-width:100%;background:var(--sheet);border:1px solid var(--rule);
+  border-radius:10px;padding:12px 12px 12px 16px}
+.snippet pre{margin:0;overflow-x:auto;flex:1;min-width:0;line-height:1.6}
+.copy{flex:none;font:500 14px var(--font);color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:8px;padding:6px 12px;cursor:pointer}
+.copy:hover{border-color:var(--graphite)}
+button:focus-visible,a:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
+
+.bench{margin-top:34px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;margin-bottom:12px}
+.seg{display:inline-flex;background:var(--sheet);border:1px solid var(--rule);border-radius:999px;padding:3px}
+.seg button{font:500 15px var(--font);color:var(--graphite);background:none;border:0;border-radius:999px;padding:7px 15px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:clamp(6px,1.2vw,12px)}
+#gallery{--ff-radius:3px;--ff-focus:var(--marker);--ff-status-color:var(--graphite);border-radius:8px}
+.meter{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;margin:16px 2px 0;color:var(--graphite);font-size:16px}
+.meter b{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;font-size:1.25em}
+.meter .live b{background:linear-gradient(transparent 62%,color-mix(in srgb,var(--marker) 70%,transparent) 62%)}
+
+section.use{padding:clamp(48px,8vw,96px) 0 40px}
+section.use h2{font-size:clamp(30px,4.5vw,46px);letter-spacing:-.03em;line-height:1.05;margin:0 0 30px;font-weight:700;max-width:16em}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:28px}
+.cols h3{font-size:20px;margin:0 0 6px;font-weight:700;letter-spacing:-.01em}
+.cols p{margin:0 0 12px;color:var(--graphite);max-width:36em}
+.cols pre{margin:0;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;overflow-x:auto;line-height:1.6}
+footer{padding:36px 0 56px;color:var(--graphite);font-size:15px;border-top:1px solid var(--rule)}
+@media (max-width:560px){ .seg button{padding:7px 12px;font-size:14px} body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span>Frameflow</span></h1>
+    <p class="lede">A photo gallery you add with one line. It loads more as you scroll, keeps only the photos near the screen in the page, and opens a viewer you can swipe, pinch and zoom.</p>
+    <div class="snippet">
+      <pre id="install"><code>&lt;script src="frameflow.min.js"&gt;&lt;/script&gt;
+&lt;div data-frameflow data-src="/photos?page={page}" data-height="70vh"&gt;&lt;/div&gt;</code></pre>
+      <button class="copy" type="button" data-copy="install">Copy</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="bench">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Layout">
+          <button type="button" data-layout="justified" aria-pressed="true">Rows</button>
+          <button type="button" data-layout="masonry" aria-pressed="false">Masonry</button>
+          <button type="button" data-layout="grid" aria-pressed="false">Grid</button>
+        </div>
+        <div class="seg" role="group" aria-label="Scrolling">
+          <button type="button" data-mode="frame" aria-pressed="true">In a frame</button>
+          <button type="button" data-mode="page" aria-pressed="false">With the page</button>
+        </div>
+      </div>
+      <div class="sheet"><div id="gallery"></div></div>
+      <p class="meter" aria-live="off">
+        <span><b id="m-loaded">0</b> of <span id="m-total">480</span> photos loaded</span>
+        <span class="live"><b id="m-dom">0</b> in the page right now</span>
+      </p>
+    </div>
+
+    <section class="use" aria-labelledby="use-h">
+      <h2 id="use-h">Point it at your photos and it does the rest.</h2>
+      <div class="cols">
+        <div>
+          <h3>From a JSON endpoint</h3>
+          <p>Use <code>{page}</code> in the URL for numbered pages, or return a <code>next</code> link or cursor. An empty page means the album is finished.</p>
+<pre><code>{
+  "items": [
+    { "src": "/p/lake.jpg", "w": 3000, "h": 2000,
+      "alt": "Lake at dawn", "color": "#c86b6b" }
+  ],
+  "next": "/photos?cursor=8f2a"
+}</code></pre>
+        </div>
+        <div>
+          <h3>From Firebase or any API</h3>
+          <p>Pass a function instead of a URL. It gets the page number and the last cursor, and returns items.</p>
+<pre><code>new Frameflow('#album', {
+  height: '70vh',
+  source: async ({ cursor }) =&gt; {
+    const r = await list(ref(storage, 'album'),
+      { maxResults: 30, pageToken: cursor });
+    return { items: await Promise.all(
+      r.items.map(getDownloadURL)),
+      next: r.nextPageToken };
+  }
+});</code></pre>
+        </div>
+        <div>
+          <h3>From plain HTML</h3>
+          <p>Images already in the page become the first photos, so the album still shows if JavaScript fails to load.</p>
+<pre><code>&lt;div data-frameflow&gt;
+  &lt;a href="big/1.jpg"&gt;
+    &lt;img src="small/1.jpg" width="600"
+         height="400" alt="Harbour"&gt;
+  &lt;/a&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Frameflow is MIT licensed and has no dependencies. The photos on this page are painted in your browser, so the demo works offline.</footer>
+</div>
+
+<script src="../dist/frameflow.min.js" data-manual></script>
+<script src="scenes.js"></script>
+<script>
+(function () {
+  var el = document.getElementById('gallery');
+  var state = { layout: 'justified', mode: 'frame' };
+  var gallery;
+  var $ = function (id) { return document.getElementById(id); };
+  document.getElementById('m-total').textContent = FrameflowDemo.total;
+
+  function create() {
+    if (gallery) gallery.destroy();
+    gallery = new Frameflow(el, {
+      layout: state.layout,
+      height: state.mode === 'frame' ? '72vh' : null,
+      rowHeight: 230,
+      columnWidth: 230,
+      gap: 6,
+      source: FrameflowDemo.source,
+      imageUrl: FrameflowDemo.imageUrl,
+      text: { end: 'That is the whole album.' },
+    });
+    meter();
+  }
+
+  var pending = false;
+  function meter() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () {
+      pending = false;
+      if (!gallery) return;
+      $('m-loaded').textContent = gallery.items.length;
+      $('m-dom').textContent = el.querySelectorAll('.ff__tile').length;
+    });
+  }
+  el.addEventListener('frameflow:load', meter);
+  el.addEventListener('scroll', meter, { passive: true, capture: true });
+  window.addEventListener('scroll', meter, { passive: true });
+  window.addEventListener('resize', meter, { passive: true });
+
+  function press(attr, value) {
+    document.querySelectorAll('[' + attr + ']').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute(attr) === value));
+    });
+  }
+  document.querySelectorAll('[data-layout]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.layout = b.getAttribute('data-layout');
+      press('data-layout', state.layout);
+      gallery.set({ layout: state.layout });
+      meter();
+    });
+  });
+  document.querySelectorAll('[data-mode]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (state.mode === b.getAttribute('data-mode')) return;
+      state.mode = b.getAttribute('data-mode');
+      press('data-mode', state.mode);
+      create();
+    });
+  });
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var text = document.getElementById(b.getAttribute('data-copy')).textContent;
+      var ok = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(ok, function () {});
+    });
+  });
+
+  create();
+})();
+</script>
+</body>
+</html>
