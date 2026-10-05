@@ -8,7 +8,7 @@
 //   --ff-focus           keyboard focus ring color     (default #2b6fff)
 //   --ff-fade            image fade-in duration        (default 260ms)
 //   --ff-status-color    loading / end text color      (default currentColor)
-//   --ff-lb-bg           viewer backdrop               (default #000e)
+//   --ff-lb-bg           viewer backdrop               (default #090b0dfa)
 //   --ff-lb-fg           viewer text and icons         (default #fff)
 
 export const CSS = `
@@ -38,7 +38,7 @@ export const CSS = `
   background:transparent;color:var(--ff-lb-fg,#fff);overflow:hidden;overscroll-behavior:contain;font:inherit}
 .ff-lb::backdrop{background:transparent}
 .ff-lb:focus{outline:none}
-.ff-lb__bg{position:absolute;inset:0;background:var(--ff-lb-bg,#000e)}
+.ff-lb__bg{position:absolute;inset:0;background:var(--ff-lb-bg,#090b0dfa)}
 .ff-lb__stage{position:absolute;inset:0;touch-action:none;user-select:none;-webkit-user-select:none}
 .ff-lb__track{position:absolute;inset:0;will-change:transform}
 .ff-lb__slide{position:absolute;inset:0;overflow:hidden}

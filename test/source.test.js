@@ -35,19 +35,19 @@ test('json source with {page} fetches numbered pages', async () => {
   assert.deepEqual(urls, ['https://site.com/api?page=1', 'https://site.com/api?page=2', 'https://site.com/api?page=3']);
 });
 
-test('json source follows next URLs and cursor tokens', async () => {
+test('json source follows relative next URLs and cursor tokens', async () => {
   const urls = [];
   const bodies = [
-    { items: ['a.jpg'], next: '/api/p2' },
-    { items: ['b.jpg'], next: 'abc123' },
-    { items: ['c.jpg'], next: null },
+    { items: ['a.jpg'], next: 'p2' },
+    { items: ['b.jpg'], cursor: 'abc/123' },
+    { items: ['c.jpg'], cursor: null },
   ];
   globalThis.fetch = async url => { urls.push(url); return json(bodies[urls.length - 1]); };
   const s = createSource({ src: 'https://site.com/api/p1' });
   assert.equal((await s.next()).done, false);
   assert.equal((await s.next()).done, false);
   assert.equal((await s.next()).done, true);
-  assert.deepEqual(urls, ['https://site.com/api/p1', 'https://site.com/api/p2', 'https://site.com/api/p2?cursor=abc123']);
+  assert.deepEqual(urls, ['https://site.com/api/p1', 'https://site.com/api/p2', 'https://site.com/api/p2?cursor=abc%2F123']);
 });
 
 test('json source without {page} or next loads once', async () => {

@@ -5,7 +5,9 @@ import { safeFetchUrl } from './items.js';
 //
 // 1. A JSON URL. Use "{page}" in it for numbered pages, for example
 //    "/api/photos?page={page}". The response can be a plain array, or an
-//    object like { items: [...], next: "/api/photos?cursor=abc" }.
+//    object like { items: [...], next: "/api/photos?cursor=abc" } (a URL,
+//    relative to the current one) or { items: [...], cursor: "abc" } (a token
+//    sent back as ?cursor=abc).
 // 2. A function ({ page, cursor, signal }) => array | { items, next }.
 //    Use this for Firebase, Supabase, a CMS, or anything else.
 
@@ -21,12 +23,13 @@ function pickItems(r) {
   return [];
 }
 
+// `next` / `nextUrl` hold a URL; `nextPageToken` / `cursor` hold an opaque
+// token that is sent back as ?cursor=<token> (or the cursorParam option).
 function pickNext(r) {
-  if (!r || typeof r !== 'object' || Array.isArray(r)) return { has: false, value: null };
-  for (const k of ['next', 'nextUrl', 'nextPageToken', 'cursor']) {
-    if (k in r) return { has: true, value: r[k] || null };
-  }
-  return { has: false, value: null };
+  if (!r || typeof r !== 'object' || Array.isArray(r)) return { has: false, value: null, url: false };
+  for (const k of ['next', 'nextUrl']) if (k in r) return { has: true, value: r[k] || null, url: true };
+  for (const k of ['nextPageToken', 'cursor']) if (k in r) return { has: true, value: r[k] || null, url: false };
+  return { has: false, value: null, url: false };
 }
 
 export function createSource(o) {
@@ -77,12 +80,8 @@ function jsonSource(template, o) {
       const nx = pickNext(r);
       nextUrl = null;
       if (nx.has && nx.value) {
-        // A "next" value may be a URL or an opaque cursor token.
-        // Anything with a scheme, a path or a query is a URL and must pass the
-        // http(s) check; everything else is sent back as ?cursor=<token>.
         const v = String(nx.value);
-        const asUrl = /^[a-z][a-z0-9+.-]*:/i.test(v) || /^\.{0,2}\//.test(v) || v.includes('?');
-        nextUrl = asUrl ? safeFetchUrl(v, url) : withParam(url, 'cursor', v);
+        nextUrl = nx.url ? safeFetchUrl(v, url) : withParam(url, o.cursorParam || 'cursor', v);
       }
       empties = items.length ? 0 : empties + 1;
       let done;

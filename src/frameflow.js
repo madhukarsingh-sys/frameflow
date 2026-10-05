@@ -23,6 +23,7 @@ const DEFAULTS = {
   preload: 1.5,          // start loading the next page this many screens early
   buffer: 1,             // keep tiles this many screens above/below the view
   credentials: 'same-origin',
+  cursorParam: 'cursor', // JSON sources: query parameter for cursor tokens
   injectStyles: true,
   nonce: null,
   text: {},

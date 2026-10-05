@@ -99,13 +99,15 @@ export class Lightbox {
   _fit(item, img) {
     const vw = this._vw(), vh = this._vh();
     const roomy = vw > 720 && matchMedia('(hover:hover)').matches;
-    const padX = roomy ? 72 : 0, padY = roomy ? 32 : 0;
+    // On large screens leave room for the arrows and the caption bar.
+    const padX = roomy ? 72 : 0, padTop = roomy ? 24 : 0, padBottom = roomy ? 64 : 0;
     let w = item.w, h = item.h;
     if (!(w > 0 && h > 0) && img && img.naturalWidth) { w = img.naturalWidth; h = img.naturalHeight; }
     if (!(w > 0 && h > 0)) { w = 1; h = 1; }
-    const s = Math.min((vw - padX * 2) / w, (vh - padY * 2) / h);
+    const availH = vh - padTop - padBottom;
+    const s = Math.min((vw - padX * 2) / w, availH / h);
     const fw = Math.max(1, Math.round(w * s)), fh = Math.max(1, Math.round(h * s));
-    return { x: Math.round((vw - fw) / 2), y: Math.round((vh - fh) / 2), w: fw, h: fh };
+    return { x: Math.round((vw - fw) / 2), y: Math.round(padTop + (availH - fh) / 2), w: fw, h: fh };
   }
 
   _place() {
@@ -364,17 +366,28 @@ export class Lightbox {
     if (s) s.img.style.transform = '';
   }
 
-  _clampPan(elastic) {
+  /** Pan limits that keep a zoomed photo covering the screen. */
+  _panRange() {
     const f = this.cur.fit;
-    if (!f) return;
-    const mx = Math.max(0, (f.w * this.z - this._vw()) / 2);
-    const my = Math.max(0, (f.h * this.z - this._vh()) / 2);
-    if (elastic) {
-      const rub = (v, m) => (Math.abs(v) <= m ? v : Math.sign(v) * (m + (Math.abs(v) - m) * 0.3));
-      this.px = rub(this.px, mx); this.py = rub(this.py, my);
-    } else {
-      this.px = clamp(this.px, -mx, mx); this.py = clamp(this.py, -my, my);
-    }
+    const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+    const fw = f.w * this.z, fh = f.h * this.z, vw = this._vw(), vh = this._vh();
+    const ax = fw > vw ? [vw - cx - fw / 2, fw / 2 - cx] : [vw / 2 - cx, vw / 2 - cx];
+    const ay = fh > vh ? [vh - cy - fh / 2, fh / 2 - cy] : [vh / 2 - cy, vh / 2 - cy];
+    return { ax, ay };
+  }
+
+  _clampPan(elastic) {
+    if (!this.cur.fit) return;
+    if (this.z <= 1.001) { this.px = 0; this.py = 0; return; }
+    const { ax, ay } = this._panRange();
+    const fit = (v, [lo, hi]) => {
+      if (!elastic) return clamp(v, lo, hi);
+      if (v < lo) return lo - (lo - v) * 0.3;
+      if (v > hi) return hi + (v - hi) * 0.3;
+      return v;
+    };
+    this.px = fit(this.px, ax);
+    this.py = fit(this.py, ay);
   }
 
   _applyZoom(animate) {
@@ -391,10 +404,10 @@ export class Lightbox {
     const s = this.cur;
     if (!s || !s.fit || s.index < 0) return;
     z = clamp(z, 1, MAX_ZOOM);
-    const vw = this._vw(), vh = this._vh();
+    const ox = s.fit.x + s.fit.w / 2, oy = s.fit.y + s.fit.h / 2; // photo center at zoom 1
     const k = z / this.z;
-    this.px = cx - vw / 2 - (cx - vw / 2 - this.px) * k;
-    this.py = cy - vh / 2 - (cy - vh / 2 - this.py) * k;
+    this.px = cx - ox - (cx - ox - this.px) * k;
+    this.py = cy - oy - (cy - oy - this.py) * k;
     this.z = z;
     if (z === 1) { this.px = 0; this.py = 0; }
     this._clampPan(false);
@@ -463,9 +476,9 @@ export class Lightbox {
       const P = this.pinch;
       const z = clamp(P.z0 * Math.hypot(a.x - b.x, a.y - b.y) / P.d0, 0.8, MAX_ZOOM);
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      const vw = this._vw(), vh = this._vh();
-      this.px = mx - vw / 2 - (P.mx - vw / 2 - P.px0) * (z / P.z0);
-      this.py = my - vh / 2 - (P.my - vh / 2 - P.py0) * (z / P.z0);
+      const f = this.cur.fit, ox = f.x + f.w / 2, oy = f.y + f.h / 2;
+      this.px = mx - ox - (P.mx - ox - P.px0) * (z / P.z0);
+      this.py = my - oy - (P.my - oy - P.py0) * (z / P.z0);
       this.z = z;
       this._applyZoom(false);
       return;
